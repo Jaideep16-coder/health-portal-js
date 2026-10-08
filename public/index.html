@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Health Assistant</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: #0f172a; color: white; }
+        #canvas-container { width: 100%; height: 250px; position: relative; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none; box-sizing: border-box; }
+        button { background-color: #2563eb; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #1d4ed8; }
+        #result-box { margin-top: 15px; padding: 10px; background: #334155; border-radius: 5px; display: none; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Medical Report Analyzer (Node.js Backend)</h2>
+            <form id="upload-form">
+                <label>Select Language:</label>
+                <select id="language">
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Tamil">Tamil (தமிழ்)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                </select>
+
+                <label style="margin-top:10px; display:block;">Upload Prescription / Lab Report:</label>
+                <input type="file" id="report-file" required>
+
+                <button type="submit">Analyze Report</button>
+            </form>
+
+            <div id="result-box">
+                <h3>Analysis Output</h3>
+                <p id="summary-text"></p>
+                <small id="disclaimer" style="color: #cbd5e1;"></small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 3D CANVAS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5).normalize();
+        scene.add(light);
+
+        const geometry = new THREE.IcosahedronGeometry(2, 1);
+        const material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        camera.position.z = 5;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            mesh.rotation.x += 0.005;
+            mesh.rotation.y += 0.005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- API CALL TO NODE.JS BACKEND ---
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const lang = document.getElementById('language').value;
+            const fileInput = document.getElementById('report-file');
+
+            const formData = new FormData();
+            formData.append('language', lang);
+            formData.append('report', fileInput.files[0]);
+
+            const response = await fetch('/api/analyze-report', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            document.getElementById('summary-text').innerText = data.analysis.summary;
+            document.getElementById('disclaimer').innerText = data.analysis.note;
+            document.getElementById('result-box').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

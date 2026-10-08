@@ -1,82 +1,36 @@
-// server.js - Backend Route Structure
 const express = require('express');
 const multer = require('multer');
-const app = express();
+const path = require('path');
 
-app.use(express.json());
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configure file uploads
 const upload = multer({ dest: 'uploads/' });
 
-// --- AUTHENTICATION ROUTES ---
+// Serve static files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-// User Registration & Login
-app.post('/api/user/register', (req, res) => {
-    // Logic: Hash password, save user profile to DB
-    res.json({ message: "User registered successfully" });
+// API Endpoint for Report Analysis
+app.post('/api/analyze-report', upload.single('report'), (req, res) => {
+    const { language } = req.body;
+    
+    // Mock response data
+    res.json({
+        success: true,
+        analysis: {
+            summary: `Report analyzed successfully in ${language || 'English'}. All vital metrics appear within normal ranges.`,
+            note: "Disclaimer: This AI summary is for informational purposes only. Please consult a medical professional."
+        }
+    });
 });
 
-app.post('/api/user/login', (req, res) => {
-    // Logic: Verify user credentials, return JWT
-    res.json({ token: "user-jwt-token", role: "patient" });
+// Fallback route: serve index.html for any other request
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Separate Doctor/Provider Login
-app.post('/api/doctor/login', (req, res) => {
-    const { doctorId, password } = req.body;
-    // Logic: Validate doctor ID against licensed provider registry
-    res.json({ token: "doctor-jwt-token", role: "doctor" });
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
-
-// --- REPORT UPLOAD & AI PROCESSING ---
-
-app.post('/api/report/upload', upload.single('reportFile'), async (req, res) => {
-    const { userId, preferredLanguage } = req.body;
-    const filePath = req.file.path;
-
-    try {
-        // Step 1: Perform OCR (Extract bilingual / handwritten text)
-        const extractedText = await performOCR(filePath);
-
-        // Step 2: Analyze report parameters via AI
-        const analysis = await analyzeMedicalText(extractedText);
-
-        // Step 3: Localize output into requested language (e.g., Hindi/Tamil)
-        const translatedSummary = await translateText(analysis.summary, preferredLanguage);
-
-        // Step 4: Save transaction to User History
-        await saveToHistory(userId, {
-            reportPath: filePath,
-            analysis: translatedSummary,
-            isUrgent: analysis.isUrgent
-        });
-
-        // Step 5: Return response with clear disclaimers
-        res.json({
-            status: "success",
-            isUrgent: analysis.isUrgent,
-            summary: translatedSummary,
-            disclaimer: "This AI-generated analysis is for informational purposes only. Consult a licensed medical professional for diagnosis."
-        });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to process report." });
-    }
-});
-
-// --- HISTORY & APPOINTMENTS ---
-
-app.get('/api/user/history/:userId', (req, res) => {
-    // Logic: Fetch user's previous report analysis history
-    res.json({ history: [] });
-});
-
-app.post('/api/appointments/book', (req, res) => {
-    // Logic: Schedule an appointment with a real doctor
-    res.json({ status: "Appointment booked with specified healthcare provider." });
-});
-
-// Helper Stubs
-async function performOCR(path) { /* Call Vision API / Tesseract */ return "Sample extracted text"; }
-async function analyzeMedicalText(text) { /* Call LLM API with structured prompt */ return { summary: "Normal parameters.", isUrgent: false }; }
-async function translateText(text, targetLang) { /* Call Translation API */ return text; }
-async function saveToHistory(userId, record) { /* DB insertion */ }
-
-app.listen(3000, () => console.log("Server running on port 3000"));

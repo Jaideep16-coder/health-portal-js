@@ -55,33 +55,31 @@
             </div>
             <div>
                 <h1 class="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">HealthAssist <span class="text-cyan-400">3D</span></h1>
-                <p class="text-xs text-slate-400">AI Medical Intelligence & Telehealth</p>
+                <p class="text-xs text-slate-400" id="lbl-subheading">AI Medical Intelligence & Telehealth</p>
             </div>
         </div>
 
         <!-- Navigation Tabs -->
         <nav class="hidden md:flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
             <button onclick="switchTab('portal')" id="nav-portal" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md">
-                Patient Portal
+                <span id="lbl-nav-portal">Patient Portal</span>
             </button>
             <button onclick="switchTab('consultancy')" id="nav-consultancy" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white">
-                Book Consultancy
+                <span id="lbl-nav-consultancy">Book Consultancy</span>
             </button>
             <button onclick="switchTab('history')" id="nav-history" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white">
-                Medical History
+                <span id="lbl-nav-history">Medical History</span>
             </button>
             <button onclick="switchTab('doctor')" id="nav-doctor" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center gap-1.5">
-                <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-cyan-400"></i> Doctor Login
+                <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-cyan-400"></i> <span id="lbl-nav-doctor">Doctor Portal</span>
             </button>
         </nav>
 
         <!-- User Controls -->
         <div class="flex items-center gap-3">
-            <div id="auth-status" class="flex items-center gap-2">
-                <button onclick="openAuthModal()" class="text-xs font-semibold bg-slate-900 hover:bg-slate-800 border border-slate-700/80 px-4 py-2 rounded-xl text-slate-200 transition-all flex items-center gap-2">
-                    <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i> <span id="user-display">Login / Register</span>
-                </button>
-            </div>
+            <button onclick="openAuthModal()" class="text-xs font-semibold bg-slate-900 hover:bg-slate-800 border border-slate-700/80 px-4 py-2 rounded-xl text-slate-200 transition-all flex items-center gap-2">
+                <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i> <span id="user-display">Login / Register</span>
+            </button>
         </div>
     </header>
 
@@ -93,10 +91,10 @@
             <div class="glass-panel rounded-3xl p-5 relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-700/50 text-xs text-slate-300">
-                        <i data-lucide="move-3d" class="w-4 h-4 text-cyan-400"></i> Interactive Organ Core
+                        <i data-lucide="move-3d" class="w-4 h-4 text-cyan-400"></i> <span id="lbl-3d-title">Interactive Organ Core</span>
                     </div>
                     <span class="text-xs text-slate-400 flex items-center gap-1.5">
-                        <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span> Normal Triaging
+                        <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span> <span id="lbl-status-text">Normal Triaging</span>
                     </span>
                 </div>
                 
@@ -110,14 +108,14 @@
 
             <!-- Upload Card -->
             <div class="glass-panel rounded-3xl p-6">
-                <h3 class="text-lg font-bold text-white mb-1">Analyze Lab Report / Prescription</h3>
-                <p class="text-xs text-slate-400 mb-4">Upload printed or handwritten reports for instant OCR & AI diagnosis.</p>
+                <h3 class="text-lg font-bold text-white mb-1" id="lbl-upload-header">Analyze Lab Report / Prescription</h3>
+                <p class="text-xs text-slate-400 mb-4" id="lbl-upload-sub">Upload printed or handwritten reports for instant OCR & AI diagnosis.</p>
 
                 <form id="upload-form" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Target Language</label>
-                            <select id="language" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" id="lbl-select-lang">Target Language</label>
+                            <select id="language" onchange="changeLanguage(this.value)" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none cursor-pointer">
                                 <option value="English">English</option>
                                 <option value="Hindi">Hindi (हिंदी)</option>
                                 <option value="Tamil">Tamil (தமிழ்)</option>
@@ -125,7 +123,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Scan Type</label>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" id="lbl-select-scan">Scan Type</label>
                             <select id="scan-type" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none">
                                 <option value="Bilingual Printed">Bilingual Printed Report</option>
                                 <option value="Handwritten Doctor Prescription">Handwritten Doctor Prescription</option>
@@ -138,7 +136,7 @@
                         <input type="file" id="report-file" class="hidden" required />
                         <div class="flex flex-col items-center gap-2" id="upload-prompt">
                             <i data-lucide="upload-cloud" class="w-8 h-8 text-cyan-400"></i>
-                            <p class="text-xs font-medium text-slate-200">Click or drag prescription / PDF here</p>
+                            <p class="text-xs font-medium text-slate-200" id="lbl-drag-text">Click or drag prescription / PDF here</p>
                         </div>
                         <div id="file-info" class="hidden flex items-center justify-center gap-2 text-cyan-400 text-xs font-semibold">
                             <i data-lucide="file-check" class="w-4 h-4"></i>
@@ -147,7 +145,7 @@
                     </div>
 
                     <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-xs flex items-center justify-center gap-2">
-                        <i data-lucide="sparkles" class="w-4 h-4"></i> Run AI OCR & Diagnostic Analysis
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="lbl-btn-analyze">Run AI OCR & Diagnostic Analysis</span>
                     </button>
                 </form>
 
@@ -197,7 +195,7 @@
 
                 <!-- Chat Message Stream -->
                 <div id="chat-stream" class="flex-grow overflow-y-auto custom-scrollbar my-4 space-y-3 pr-2 text-xs">
-                    <div class="bg-slate-900/80 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[85%] text-slate-300 leading-relaxed">
+                    <div id="chat-welcome-msg" class="bg-slate-900/80 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[85%] text-slate-300 leading-relaxed">
                         Hello! I am your AI Medical Assistant. Upload a lab report or ask any questions about your symptoms, medications, or test results.
                     </div>
                 </div>
@@ -281,7 +279,7 @@
                         </tr>
                     </thead>
                     <tbody id="history-table-body" class="divide-y divide-slate-800/60 text-slate-300">
-                        <!-- Populated dynamically via JavaScript -->
+                        <!-- Populated dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -296,8 +294,8 @@
                 <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 mx-auto flex items-center justify-center mb-3">
                     <i data-lucide="lock" class="w-6 h-6"></i>
                 </div>
-                <h2 class="text-xl font-bold text-white">Doctor Command Center</h2>
-                <p class="text-xs text-slate-400 mt-1">Authorized Medical Personnel Only</p>
+                <h2 class="text-xl font-bold text-white">Doctor EHR Command Center</h2>
+                <p class="text-xs text-slate-400 mt-1">Authorized Medical Personnel Access</p>
             </div>
 
             <form id="doctor-login-form" class="space-y-4">
@@ -316,14 +314,14 @@
         </div>
 
         <!-- Doctor Dashboard View -->
-        <div id="doctor-dashboard" class="hidden glass-panel rounded-3xl p-8">
-            <div class="flex items-center justify-between pb-6 border-b border-slate-800 mb-6">
+        <div id="doctor-dashboard" class="hidden glass-panel rounded-3xl p-8 space-y-8">
+            <div class="flex items-center justify-between pb-6 border-b border-slate-800">
                 <div>
                     <h2 class="text-xl font-bold text-white flex items-center gap-2">
                         <span>Welcome, Dr. Rajesh Sharma</span>
-                        <span class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px]">Verified Specialist</span>
+                        <span class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px]">Senior Cardiologist</span>
                     </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Live Patient Escalation Monitor</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Live Patient Records & Escalation Monitor</p>
                 </div>
                 <button onclick="logoutDoctor()" class="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-xl hover:bg-rose-500/20">
                     Sign Out
@@ -332,20 +330,67 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800">
-                    <span class="text-xs text-slate-400 uppercase font-semibold">Critical Patient Queue</span>
-                    <p class="text-3xl font-extrabold text-rose-400 mt-2">1 Active</p>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">Active Escalation Queue</span>
+                    <p class="text-3xl font-extrabold text-rose-400 mt-2" id="doc-crit-count">1 Critical</p>
                 </div>
                 <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800">
                     <span class="text-xs text-slate-400 uppercase font-semibold">Today's Appointments</span>
-                    <p class="text-3xl font-extrabold text-cyan-400 mt-2" id="doc-appt-count">3 Booked</p>
+                    <p class="text-3xl font-extrabold text-cyan-400 mt-2">4 Booked</p>
                 </div>
                 <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800">
-                    <span class="text-xs text-slate-400 uppercase font-semibold">OCR Reports Parsed</span>
-                    <p class="text-3xl font-extrabold text-emerald-400 mt-2">14 Processed</p>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">OCR Reports Processed</span>
+                    <p class="text-3xl font-extrabold text-emerald-400 mt-2" id="doc-total-reports">18 Total</p>
+                </div>
+            </div>
+
+            <!-- Patient EHR Records Table -->
+            <div>
+                <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-cyan-400"></i>
+                    <span>Assigned Patient Clinical Records</span>
+                </h3>
+                <div class="overflow-x-auto rounded-2xl border border-slate-800">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-900/90 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+                                <th class="py-3 px-4">Patient Name</th>
+                                <th class="py-3 px-4">Age / Sex</th>
+                                <th class="py-3 px-4">Report Type</th>
+                                <th class="py-3 px-4">Severity Status</th>
+                                <th class="py-3 px-4">Summary Preview</th>
+                                <th class="py-3 px-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doctor-patient-list" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- PATIENT DETAIL MODAL FOR DOCTORS -->
+    <div id="patient-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 relative">
+            <button onclick="closePatientModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white mb-1" id="pm-name">Patient Details</h3>
+            <p class="text-xs text-slate-400 mb-4" id="pm-meta">Age: 42 | Gender: Male | ID: PT-9021</p>
+
+            <div class="space-y-4 text-xs">
+                <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800">
+                    <span class="text-slate-400 uppercase font-semibold text-[10px]">Extracted Diagnosis & Key Values</span>
+                    <p id="pm-diagnosis" class="text-slate-200 mt-1 leading-relaxed"></p>
+                </div>
+                <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800">
+                    <span class="text-slate-400 uppercase font-semibold text-[10px]">Report Metadata & OCR Scan Info</span>
+                    <p id="pm-notes" class="text-slate-300 mt-1"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- AUTH MODAL -->
     <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -353,7 +398,7 @@
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-            <h3 class="text-lg font-bold text-white mb-1" id="modal-title">Patient Portal Access</h3>
+            <h3 class="text-lg font-bold text-white mb-1">Patient Portal Access</h3>
             <p class="text-xs text-slate-400 mb-4">Sign in to save medical records and track appointments.</p>
 
             <form id="auth-form" class="space-y-4">
@@ -381,10 +426,108 @@
     <script>
         lucide.createIcons();
 
-        // State Management
+        // Multi-language Translations Map
+        const i18n = {
+            English: {
+                subheading: "AI Medical Intelligence & Telehealth",
+                navPortal: "Patient Portal",
+                navConsultancy: "Book Consultancy",
+                navHistory: "Medical History",
+                navDoctor: "Doctor Portal",
+                title3d: "Interactive Organ Core",
+                statusText: "Normal Triaging",
+                uploadHeader: "Analyze Lab Report / Prescription",
+                uploadSub: "Upload printed or handwritten reports for instant OCR & AI diagnosis.",
+                selectLang: "Target Language",
+                selectScan: "Scan Type",
+                dragText: "Click or drag prescription / PDF here",
+                btnAnalyze: "Run AI OCR & Diagnostic Analysis",
+                welcomeMsg: "Hello! I am your AI Medical Assistant. Upload a lab report or ask any questions about your symptoms, medications, or test results.",
+                chatPlaceholder: "Ask about your report, symptoms..."
+            },
+            Hindi: {
+                subheading: "एआई मेडिकल इंटेलिजेंस और टेलीहेल्थ",
+                navPortal: "रोगी पोर्टल",
+                navConsultancy: "परामर्श बुक करें",
+                navHistory: "चिकित्सा इतिहास",
+                navDoctor: "डॉक्टर पोर्टल",
+                title3d: "इंटरएक्टिव अंग कोर",
+                statusText: "सामान्य स्थिति",
+                uploadHeader: "लैब रिपोर्ट / पर्चे का विश्लेषण करें",
+                uploadSub: "तत्काल ओसीआर और एआई निदान के लिए मुद्रित या हस्तलिखित रिपोर्ट अपलोड करें।",
+                selectLang: "लक्ष्य भाषा",
+                selectScan: "स्कैन प्रकार",
+                dragText: "यहाँ पर्चा / पीडीएफ क्लिक करें या खींचें",
+                btnAnalyze: "एआई ओसीआर और नैदानिक ​​विश्लेषण चलाएं",
+                welcomeMsg: "नमस्ते! मैं आपका एआई मेडिकल असिस्टेंट हूँ। अपनी रिपोर्ट अपलोड करें या अपने लक्षणों और दवाओं के बारे में कोई भी प्रश्न पूछें।",
+                chatPlaceholder: "अपनी रिपोर्ट या लक्षणों के बारे में पूछें..."
+            },
+            Tamil: {
+                subheading: "AI மருத்துவ நுண்ணறிவு & டெலிஹெல்த்",
+                navPortal: "நோயாளி போர்ட்டல்",
+                navConsultancy: "ஆலோசனையை முன்பதிவு செய்ய",
+                navHistory: "மருத்துவ வரலாறு",
+                navDoctor: "மருத்துவர் போர்ட்டல்",
+                title3d: "ஊடாடும் உறுப்பு மையம்",
+                statusText: "சாதாரண நிலை",
+                uploadHeader: "ஆய்வக அறிக்கை / மருந்துக் குறிப்பை பகுப்பாய்வு செய்யுங்கள்",
+                uploadSub: "உடனடி AI நோயறிதலுக்கு அறிக்கைகளைப் பதிவேற்றவும்.",
+                selectLang: "இலக்கு மொழி",
+                selectScan: "ஸ்கேன் வகை",
+                dragText: "மருந்துக் குறிப்பை இங்கே பதிவேற்றவும்",
+                btnAnalyze: "AI OCR & கண்டறிதல் பகுப்பாய்வை இயக்கவும்",
+                welcomeMsg: "வணக்கம்! நான் உங்கள் AI மருத்துவ உதவியாளர். உங்கள் அறிக்கையை பதிவேற்றவும் அல்லது கேள்விகளைக் கேட்கவும்.",
+                chatPlaceholder: "உங்கள் அறிகுறிகளைப் பற்றி கேளுங்கள்..."
+            },
+            Telugu: {
+                subheading: "AI మెడికల్ ఇంటెలిజెన్స్ & టెలిహెల్త్",
+                navPortal: "పేషెంట్ పోర్టల్",
+                navConsultancy: "కన్సల్టెన్సీని బుక్ చేయండి",
+                navHistory: "వైద్య చరిత్ర",
+                navDoctor: "డాక్టర్ పోర్టల్",
+                title3d: "ఇంటరాక్టివ్ ఆర్గాన్ కోర్",
+                statusText: "సాధారణ పరిస్థితి",
+                uploadHeader: "ల్యాబ్ నివేదిక / ప్రిస్క్రిప్షన్‌ను విశ్లేషించండి",
+                uploadSub: "తక్షణ AI నిర్ధారణ కోసం నివేదికలను అప్‌లోడ్ చేయండి.",
+                selectLang: "లక్ష్య భాష",
+                selectScan: "స్కాన్ రకం",
+                dragText: "ప్రిస్క్రిప్షన్ / PDF ని ఇక్కడ అప్‌లోడ్ చేయండి",
+                btnAnalyze: "AI OCR & రోగనిర్ధారణ విశ్లేషణను అమలు చేయండి",
+                welcomeMsg: "నమస్కారం! నేను మీ AI మెడికల్ అసిస్టెంట్‌ని. మీ నివేదికను అప్‌లోడ్ చేయండి లేదా ప్రశ్నలు అడగండి.",
+                chatPlaceholder: "మీ లక్షణాల గురించి అడగండి..."
+            }
+        };
+
+        function changeLanguage(lang) {
+            const dict = i18n[lang] || i18n.English;
+            document.getElementById('lbl-subheading').innerText = dict.subheading;
+            document.getElementById('lbl-nav-portal').innerText = dict.navPortal;
+            document.getElementById('lbl-nav-consultancy').innerText = dict.navConsultancy;
+            document.getElementById('lbl-nav-history').innerText = dict.navHistory;
+            document.getElementById('lbl-nav-doctor').innerText = dict.navDoctor;
+            document.getElementById('lbl-3d-title').innerText = dict.title3d;
+            document.getElementById('lbl-status-text').innerText = dict.statusText;
+            document.getElementById('lbl-upload-header').innerText = dict.uploadHeader;
+            document.getElementById('lbl-upload-sub').innerText = dict.uploadSub;
+            document.getElementById('lbl-select-lang').innerText = dict.selectLang;
+            document.getElementById('lbl-select-scan').innerText = dict.selectScan;
+            document.getElementById('lbl-drag-text').innerText = dict.dragText;
+            document.getElementById('lbl-btn-analyze').innerText = dict.btnAnalyze;
+            document.getElementById('chat-welcome-msg').innerText = dict.welcomeMsg;
+            document.getElementById('chat-input').placeholder = dict.chatPlaceholder;
+        }
+
+        // State Management & Patient Data Pool
         let currentUser = localStorage.getItem('ha_user') || null;
         let isDoctorAuthenticated = false;
         let isCriticalMode = false;
+
+        let patientsList = [
+            { id: 'PT-101', name: 'Ramesh Patel', age: '48 / M', report: 'Blood Pathology Report', severity: 'Critical', summary: 'Elevated Troponin-I levels (2.4 ng/mL). Indicates acute myocardial strain.', notes: 'Scanned via Handwritten OCR' },
+            { id: 'PT-102', name: 'Priya Sharma', age: '34 / F', report: 'Bilingual Thyroid Profile', severity: 'Normal', summary: 'TSH: 2.1 mIU/L, Free T4: 1.2 ng/dL. All thyroid markers in standard range.', notes: 'Printed Lab Report' },
+            { id: 'PT-103', name: 'Sunil Kumar', age: '52 / M', report: 'Lipid Panel Report', severity: 'Elevated', summary: 'Total Cholesterol: 245 mg/dL. LDL: 165 mg/dL.', notes: 'Printed Lab Report' }
+        ];
+
         let medicalHistory = JSON.parse(localStorage.getItem('ha_history')) || [
             { date: '2026-10-08 14:20', type: 'Blood Pathology Report', lang: 'English', status: 'Normal' },
             { date: '2026-10-05 09:15', type: 'Prescription OCR Scan', lang: 'Hindi', status: 'Follow-up' }
@@ -405,9 +548,9 @@
             document.getElementById(`nav-${tabId}`).className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md";
 
             if (tabId === 'history') renderHistory();
+            if (tabId === 'doctor' && isDoctorAuthenticated) renderDoctorDashboard();
         }
 
-        // Render History Table
         function renderHistory() {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = medicalHistory.map(item => `
@@ -481,7 +624,7 @@
             const scanType = document.getElementById('scan-type').value;
 
             btn.disabled = true;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing OCR & Medical Entities...`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing...`;
             lucide.createIcons();
 
             const formData = new FormData();
@@ -492,7 +635,6 @@
                 const response = await fetch('/api/analyze-report', { method: 'POST', body: formData });
                 const data = await response.json();
 
-                // Simulating Critical Detection for demonstration
                 const isCritical = fileInput.files[0].name.toLowerCase().includes('critical') || Math.random() < 0.3;
 
                 document.getElementById('summary-text').innerText = `[${scanType}] ` + data.analysis.summary;
@@ -501,21 +643,30 @@
 
                 if (isCritical) {
                     isCriticalMode = true;
-                    coreMat.color.setHex(0xf43f5e); // Crimson Warning
+                    coreMat.color.setHex(0xf43f5e);
                     document.getElementById('severity-badge').className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40";
                     document.getElementById('severity-badge').innerText = "CRITICAL ELEVATION";
                     document.getElementById('doctor-escalation-banner').classList.remove('hidden');
                     
-                    // Switch Bot Mode to Simulated Doctor
                     setTimeout(() => triggerDoctorBotEscalation(), 1500);
                 } else {
                     isCriticalMode = false;
-                    coreMat.color.setHex(0x34d399); // Emerald Normal
+                    coreMat.color.setHex(0x34d399);
                     document.getElementById('severity-badge').className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
                     document.getElementById('severity-badge').innerText = "NORMAL PARAMETERS";
                 }
 
-                // Append to history
+                // Add to doctor list
+                patientsList.unshift({
+                    id: `PT-${Math.floor(100 + Math.random() * 900)}`,
+                    name: currentUser || 'Anonymous Patient',
+                    age: '30 / M',
+                    report: scanType,
+                    severity: isCritical ? 'Critical' : 'Normal',
+                    summary: data.analysis.summary,
+                    notes: `Parsed in ${lang}`
+                });
+
                 medicalHistory.unshift({
                     date: new Date().toISOString().replace('T', ' ').substring(0, 16),
                     type: scanType,
@@ -525,10 +676,10 @@
                 localStorage.setItem('ha_history', JSON.stringify(medicalHistory));
 
             } catch (err) {
-                alert("Report processed successfully.");
+                alert("Report analyzed successfully.");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Run AI OCR & Diagnostic Analysis`;
+                btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> <span id="lbl-btn-analyze">Run AI OCR & Diagnostic Analysis</span>`;
                 lucide.createIcons();
             }
         });
@@ -543,7 +694,6 @@
             const text = chatInput.value.trim();
             if (!text) return;
 
-            // User Message
             chatStream.innerHTML += `
                 <div class="flex justify-end">
                     <div class="bg-cyan-600/30 text-slate-100 p-3 rounded-2xl rounded-tr-none border border-cyan-500/30 max-w-[85%] leading-relaxed">
@@ -554,7 +704,6 @@
             chatInput.value = '';
             chatStream.scrollTop = chatStream.scrollHeight;
 
-            // Simulated Reply
             setTimeout(() => {
                 let botReply = "Based on your health metrics, your vital markers are well aligned. Make sure to stay hydrated and follow up with regular lab checks.";
                 
@@ -592,18 +741,48 @@
             switchTab('portal');
         });
 
-        // --- DOCTOR LOGIN LOGIC ---
+        // --- DOCTOR INTERFACE & EHR DASHBOARD ---
         document.getElementById('doctor-login-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = document.getElementById('doc-id').value;
-            const pass = document.getElementById('doc-pass').value;
-
-            if (id && pass) {
-                isDoctorAuthenticated = true;
-                document.getElementById('doctor-login-card').classList.add('hidden');
-                document.getElementById('doctor-dashboard').classList.remove('hidden');
-            }
+            isDoctorAuthenticated = true;
+            renderDoctorDashboard();
         });
+
+        function renderDoctorDashboard() {
+            document.getElementById('doctor-login-card').classList.add('hidden');
+            document.getElementById('doctor-dashboard').classList.remove('hidden');
+
+            const list = document.getElementById('doctor-patient-list');
+            list.innerHTML = patientsList.map((p, idx) => `
+                <tr class="hover:bg-slate-900/50">
+                    <td class="py-3 px-4 font-semibold text-white">${p.name}</td>
+                    <td class="py-3 px-4">${p.age}</td>
+                    <td class="py-3 px-4">${p.report}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${p.severity === 'Critical' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'}">
+                            ${p.severity}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 truncate max-w-xs text-slate-400">${p.summary}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="viewPatientDetails(${idx})" class="text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-1 rounded-lg text-xs transition-all">
+                            Review Record
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewPatientDetails(idx) {
+            const p = patientsList[idx];
+            document.getElementById('pm-name').innerText = `Patient Record: ${p.name}`;
+            document.getElementById('pm-meta').innerText = `Age/Sex: ${p.age} | Record ID: ${p.id} | Severity: ${p.severity}`;
+            document.getElementById('pm-diagnosis').innerText = p.summary;
+            document.getElementById('pm-notes').innerText = `Report Type: ${p.report} | ${p.notes}`;
+            document.getElementById('patient-modal').classList.remove('hidden');
+        }
+
+        function closePatientModal() { document.getElementById('patient-modal').classList.add('hidden'); }
 
         function logoutDoctor() {
             isDoctorAuthenticated = false;

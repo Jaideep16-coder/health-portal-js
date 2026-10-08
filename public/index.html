@@ -645,12 +645,22 @@
 
             try {
                 const response = await fetch('/api/analyze-report', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    throw new Error(`Analysis server returned ${response.status}`);
+                }
+
                 const data = await response.json();
+                const analysis = data.analysis || data;
+                const severity = String(analysis.severity || analysis.status || 'Normal').toLowerCase();
+                const isCritical = ['critical', 'urgent', 'emergency', 'high'].some(v => severity.includes(v));
 
-                const isCritical = fileInput.files[0].name.toLowerCase().includes('critical') || Math.random() < 0.3;
+                const summary = analysis.summary || analysis.interpretation || analysis.result || 'The report was processed, but no summary was returned.';
+                const note = analysis.note || analysis.disclaimer || 'This AI analysis is for informational purposes and does not replace a licensed medical professional.';
 
-                document.getElementById('summary-text').innerText = `[${scanType}] ` + data.analysis.summary;
-                document.getElementById('disclaimer').innerText = data.analysis.note;
+                document.getElementById('summary-text').innerText = `[${scanType}] ${summary}`;
+                document.getElementById('disclaimer').innerText = note;
+                lastReportAnalysis = { ...analysis, summary, note, scan_type: scanType, language: lang };
+                chatMessages.push({ role: 'system', content: `New report analyzed: ${summary}` });
                 document.getElementById('result-box').classList.remove('hidden');
 
                 if (isCritical) {
@@ -687,7 +697,12 @@
                 localStorage.setItem('ha_history', JSON.stringify(medicalHistory));
 
             } catch (err) {
-                alert("Report analyzed successfully.");
+                console.error('Report analysis failed:', err);
+                document.getElementById('result-box').classList.remove('hidden');
+                document.getElementById('severity-badge').innerText = 'ANALYSIS FAILED';
+                document.getElementById('severity-badge').className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40";
+                document.getElementById('summary-text').innerText = `Unable to analyze this report: ${err.message}. Please check that the AI backend is running and the file format is supported.`;
+                document.getElementById('disclaimer').innerText = 'No medical conclusion was generated because the analysis service failed.';
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> <span id="lbl-btn-analyze">Run AI OCR & Diagnostic Analysis</span>`;
@@ -695,59 +710,104 @@
             }
         });
 
-        // --- AI CHAT & DOCTOR BOT WITH MULTI-LANGUAGE RESPONSE FIX ---
+        // --- AI CHAT WITH CONVERSATION MEMORY ---
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatStream = document.getElementById('chat-stream');
+        let chatMessages = [];
+        let lastReportAnalysis = null;
 
-        chatForm.addEventListener('submit', (e) => {
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, c => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;'
+            }[c]));
+        }
+
+        function addChatMessage(role, text, typing = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
+            wrapper.innerHTML = role === 'user'
+                ? `<div class="bg-cyan-600/30 text-slate-100 p-3 rounded-2xl rounded-tr-none border border-cyan-500/30 max-w-[85%] leading-relaxed whitespace-pre-wrap">${escapeHTML(text)}</div>`
+                : `<div class="bg-slate-900/80 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[90%] text-slate-300 leading-relaxed whitespace-pre-wrap">${typing ? '<span class="animate-pulse">AI is thinking...</span>' : escapeHTML(text)}</div>`;
+            chatStream.appendChild(wrapper);
+            chatStream.scrollTop = chatStream.scrollHeight;
+            return wrapper;
+        }
+
+        function getLastAnalysisContext() {
+            if (lastReportAnalysis) return lastReportAnalysis;
+            return { summary: document.getElementById('summary-text').innerText || '', severity: document.getElementById('severity-badge').innerText || '' };
+        }
+
+        function localFallbackReply(question) {
+            const q = question.toLowerCase();
+            const report = getLastAnalysisContext();
+            if (report.summary) {
+                return `Based on the report currently loaded: ${report.summary}\n\nYou asked: ${question}\n\nI can explain individual values, but a licensed clinician should make the final diagnosis.`;
+            }
+            if (q.includes('hello') || q.includes('hi')) return 'Hello! I can help you understand symptoms and medical reports. Upload a report or ask me a specific question.';
+            if (q.includes('pain') || q.includes('chest') || q.includes('breath')) return 'These symptoms can have different causes and may sometimes require urgent medical assessment. If symptoms are severe, sudden, or worsening, seek emergency medical care immediately.';
+            return 'I can help with your health question. Please give me the symptom, test value, medicine name, or report finding you want explained.';
+        }
+
+        async function sendChatMessage(text) {
+            const selectedLang = document.getElementById('language').value || 'English';
+            const userMessage = { role: 'user', content: text };
+            chatMessages.push(userMessage);
+            addChatMessage('user', text);
+            chatInput.value = '';
+
+            const typingBubble = addChatMessage('assistant', '', true);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        language: selectedLang,
+                        history: chatMessages.slice(-12),
+                        report_analysis: getLastAnalysisContext()
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Chat server returned ${response.status}`);
+                const data = await response.json();
+                const reply = data.reply || data.message || data.response || data.answer;
+                if (!reply) throw new Error('The AI server returned no reply.');
+
+                typingBubble.remove();
+                chatMessages.push({ role: 'assistant', content: reply });
+                addChatMessage('assistant', reply);
+            } catch (err) {
+                console.warn('Using local chat fallback:', err);
+                typingBubble.remove();
+                const reply = localFallbackReply(text);
+                chatMessages.push({ role: 'assistant', content: reply });
+                addChatMessage('assistant', reply);
+            }
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = chatInput.value.trim();
             if (!text) return;
-
-            const selectedLang = document.getElementById('language').value || 'English';
-            const dict = i18n[selectedLang] || i18n.English;
-
-            chatStream.innerHTML += `
-                <div class="flex justify-end">
-                    <div class="bg-cyan-600/30 text-slate-100 p-3 rounded-2xl rounded-tr-none border border-cyan-500/30 max-w-[85%] leading-relaxed">
-                        ${text}
-                    </div>
-                </div>
-            `;
-            chatInput.value = '';
-            chatStream.scrollTop = chatStream.scrollHeight;
-
-            setTimeout(() => {
-                let botReply = dict.botNormalReply;
-                
-                if (text.toLowerCase().includes('pain') || text.toLowerCase().includes('bp') || text.includes('दर्द') || isCriticalMode) {
-                    botReply = dict.botCriticalReply;
-                }
-
-                chatStream.innerHTML += `
-                    <div class="bg-slate-900/80 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[85%] text-slate-300 leading-relaxed">
-                        ${botReply}
-                    </div>
-                `;
-                chatStream.scrollTop = chatStream.scrollHeight;
-            }, 1000);
+            const sendButton = chatForm.querySelector('button');
+            sendButton.disabled = true;
+            try { await sendChatMessage(text); }
+            finally { sendButton.disabled = false; chatInput.focus(); }
         });
 
         function triggerDoctorBotEscalation() {
             const selectedLang = document.getElementById('language').value || 'English';
             const dict = i18n[selectedLang] || i18n.English;
 
-            document.getElementById('chat-agent-name').innerText = "Dr. Rajesh Sharma (On-Duty)";
-            document.getElementById('chat-agent-role').innerText = "Cardiologist Specialist";
+            // Keep the AI clearly identified as AI; real clinician connection should be implemented by the backend.
+            document.getElementById('chat-agent-name').innerText = 'HealthBot AI — Urgent Triage';
+            document.getElementById('chat-agent-role').innerText = 'AI triage assistant • clinician referral recommended';
             document.getElementById('bot-avatar').className = "w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center";
 
-            chatStream.innerHTML += `
-                <div class="bg-rose-950/40 p-3 rounded-2xl border border-rose-500/30 text-rose-200 leading-relaxed">
-                    ${dict.doctorAlertMsg}
-                </div>
-            `;
-            chatStream.scrollTop = chatStream.scrollHeight;
+            addChatMessage('assistant', '⚠️ The report contains findings that the AI marked as potentially urgent. Please contact a licensed medical professional promptly. This AI is not a doctor.');
         }
 
         // --- CONSULTANCY BOOKING ---

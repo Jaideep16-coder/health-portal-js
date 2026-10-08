@@ -587,6 +587,7 @@
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length > 0) {
                 document.getElementById('file-name').textContent = fileInput.files[0].name;
+                lastReportFile = fileInput.files[0];
                 document.getElementById('upload-prompt').classList.add('hidden');
                 document.getElementById('file-info').classList.remove('hidden');
             }
@@ -684,7 +685,7 @@
                     age: '30 / M',
                     report: scanType,
                     severity: isCritical ? 'Critical' : 'Normal',
-                    summary: data.analysis.summary,
+                    summary: summary,
                     notes: `Parsed in ${lang}`
                 });
 
@@ -710,12 +711,14 @@
             }
         });
 
-        // --- AI CHAT WITH CONVERSATION MEMORY ---
+        // --- AI CHAT WITH REPORT-AWARE CONVERSATION MEMORY ---
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatStream = document.getElementById('chat-stream');
         let chatMessages = [];
         let lastReportAnalysis = null;
+        let lastReportFile = null;
+        let lastAskedMetric = null;
 
         function escapeHTML(value) {
             return String(value ?? '').replace(/[&<>'"]/g, c => ({
@@ -734,20 +737,122 @@
             return wrapper;
         }
 
+        // Recursively search the AI report response for a lab value.
+        // This works with objects such as {metrics:{hemoglobin:"13.2 g/dL"}},
+        // arrays such as [{name:"Hemoglobin", value:"13.2"}], and raw OCR text.
+        function findMetricInObject(value, keywords, path = '') {
+            if (value == null) return null;
+            if (typeof value === 'string' || typeof value === 'number') {
+                const text = String(value);
+                const lower = text.toLowerCase();
+                if (keywords.some(k => lower.includes(k))) {
+                    const match = text.match(/(?:hemoglobin|hgb|hb)\s*[:=\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*(g\/dL|g\/dl|gm\/dl|gm\/dL)?/i);
+                    if (match) return { value: match[1], unit: match[2] || 'g/dL', source: text };
+                    if (/^[0-9]+(?:\.[0-9]+)?\s*(g\/dL|g\/dl|gm\/dl|gm\/dL)?$/i.test(text.trim())) {
+                        return { value: text.trim(), unit: '', source: path };
+                    }
+                }
+                return null;
+            }
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    const found = findMetricInObject(item, keywords, path);
+                    if (found) return found;
+                }
+                return null;
+            }
+            if (typeof value === 'object') {
+                for (const [key, child] of Object.entries(value)) {
+                    const keyLower = key.toLowerCase();
+                    if (keywords.some(k => keyLower.includes(k))) {
+                        if (typeof child === 'string' || typeof child === 'number') {
+                            return { value: String(child), unit: '', source: key };
+                        }
+                    }
+                    const found = findMetricInObject(child, keywords, path ? `${path}.${key}` : key);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function findMetricInReport(question) {
+            if (!lastReportAnalysis) return null;
+            const q = question.toLowerCase();
+
+            const metricMap = [
+                { words: ['hemoglobin', 'hgb', 'hb'], keys: ['hemoglobin', 'hgb', 'hb'] },
+                { words: ['sugar', 'glucose', 'blood glucose'], keys: ['glucose', 'blood sugar', 'sugar'] },
+                { words: ['cholesterol', 'total cholesterol'], keys: ['cholesterol', 'total cholesterol'] },
+                { words: ['ldl'], keys: ['ldl'] },
+                { words: ['hdl'], keys: ['hdl'] },
+                { words: ['triglyceride', 'triglycerides'], keys: ['triglyceride', 'triglycerides'] },
+                { words: ['platelet', 'platelets'], keys: ['platelet', 'platelets'] },
+                { words: ['wbc', 'white blood'], keys: ['wbc', 'white blood cell', 'white blood cells'] },
+                { words: ['rbc', 'red blood'], keys: ['rbc', 'red blood cell', 'red blood cells'] },
+                { words: ['tsh'], keys: ['tsh'] },
+                { words: ['vitamin d', 'vit d'], keys: ['vitamin d', 'vit d'] }
+            ];
+
+            const metric = metricMap.find(m => m.words.some(w => q.includes(w))) || (lastAskedMetric ? metricMap.find(m => m.words.includes(lastAskedMetric)) : null);
+            if (!metric) return null;
+            lastAskedMetric = metric.words[0];
+
+            // First inspect structured fields returned by the backend.
+            const structured = findMetricInObject(lastReportAnalysis, metric.keys);
+            if (structured) return { name: metric.words[0].toUpperCase(), ...structured };
+
+            // Then inspect extracted OCR/report text if the backend returned it.
+            const rawText = [
+                lastReportAnalysis.extracted_text,
+                lastReportAnalysis.ocr_text,
+                lastReportAnalysis.report_text,
+                lastReportAnalysis.text,
+                lastReportAnalysis.details,
+                lastReportAnalysis.summary,
+                lastReportAnalysis.interpretation
+            ].filter(Boolean).join('\n');
+
+            if (rawText) {
+                const escaped = metric.keys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+                const re = new RegExp(`(?:${escaped})\\s*(?:[:=\\-]|is|was)?\\s*([0-9]+(?:\\.[0-9]+)?)\\s*([a-zA-Z%/µ]+(?:\\/[a-zA-Z]+)?)?`, 'i');
+                const match = rawText.match(re);
+                if (match) return { name: metric.words[0].toUpperCase(), value: match[1], unit: match[2] || '', source: match[0] };
+            }
+            return null;
+        }
+
         function getLastAnalysisContext() {
             if (lastReportAnalysis) return lastReportAnalysis;
-            return { summary: document.getElementById('summary-text').innerText || '', severity: document.getElementById('severity-badge').innerText || '' };
+            return {};
         }
 
         function localFallbackReply(question) {
-            const q = question.toLowerCase();
-            const report = getLastAnalysisContext();
-            if (report.summary) {
-                return `Based on the report currently loaded: ${report.summary}\n\nYou asked: ${question}\n\nI can explain individual values, but a licensed clinician should make the final diagnosis.`;
+            const q = question.toLowerCase().trim();
+
+            if (q.includes('hgb') || q.includes('hemoglobin') || /\bhb\b/.test(q)) {
+                const metric = findMetricInReport(question);
+                if (metric) {
+                    return `Your hemoglobin (HGB) in the uploaded report is ${metric.value}${metric.unit ? ' ' + metric.unit : ''}.\n\nIf you want, ask me "is my hemoglobin normal?" and I can explain the result using the reference range shown in your report.`;
+                }
+                return 'I could not find a hemoglobin (HGB) value in the report data available to me. Please make sure the uploaded report is clear and that the AI analysis returned the extracted laboratory values.';
             }
-            if (q.includes('hello') || q.includes('hi')) return 'Hello! I can help you understand symptoms and medical reports. Upload a report or ask me a specific question.';
-            if (q.includes('pain') || q.includes('chest') || q.includes('breath')) return 'These symptoms can have different causes and may sometimes require urgent medical assessment. If symptoms are severe, sudden, or worsening, seek emergency medical care immediately.';
-            return 'I can help with your health question. Please give me the symptom, test value, medicine name, or report finding you want explained.';
+
+            const metric = findMetricInReport(question);
+            if (metric) {
+                return `The ${metric.name} value I found in your report is ${metric.value}${metric.unit ? ' ' + metric.unit : ''}. Ask me for its reference range or what the result means.`;
+            }
+
+            if (q.includes('hello') || q.includes('hi')) {
+                return 'Hello! I can answer follow-up questions about your uploaded report. Try asking "What is my HGB?", "Is my HGB normal?", or "What does my TSH mean?"';
+            }
+            if (q.includes('pain') || q.includes('chest') || q.includes('breath')) {
+                return 'These symptoms can have different causes and may sometimes require urgent medical assessment. If symptoms are severe, sudden, or worsening, seek emergency medical care immediately.';
+            }
+            if (lastReportAnalysis) {
+                return `I have your report analysis available, but I could not find a specific value matching that question. Please ask for a specific parameter such as HGB, glucose, TSH, LDL, HDL, or platelets.`;
+            }
+            return 'Please upload a medical report first, or ask me a specific health question.';
         }
 
         async function sendChatMessage(text) {
@@ -760,27 +865,43 @@
             const typingBubble = addChatMessage('assistant', '', true);
 
             try {
+                // Send both the structured AI analysis and the original report when available.
+                // The backend can then answer questions about exact values instead of only seeing a generic summary.
+                const payload = {
+                    message: text,
+                    language: selectedLang,
+                    history: chatMessages.slice(-12),
+                    report_analysis: getLastAnalysisContext()
+                };
+
+                if (lastReportFile) payload.report_filename = lastReportFile.name;
+
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: text,
-                        language: selectedLang,
-                        history: chatMessages.slice(-12),
-                        report_analysis: getLastAnalysisContext()
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) throw new Error(`Chat server returned ${response.status}`);
                 const data = await response.json();
-                const reply = data.reply || data.message || data.response || data.answer;
+                let reply = data.reply || data.message || data.response || data.answer;
                 if (!reply) throw new Error('The AI server returned no reply.');
+
+                // Some older backends return the same generic report summary for every question.
+                // Do not display that as the answer to a specific lab-value question.
+                const genericReportReply = /report currently loaded|report analyzed successfully|all vital metrics appear within normal ranges/i.test(String(reply));
+                const asksSpecificValue = /\b(hgb|hb|hemoglobin|glucose|sugar|cholesterol|ldl|hdl|triglyceride|platelet|wbc|rbc|tsh|vitamin d)\b/i.test(text);
+                if (genericReportReply && asksSpecificValue) {
+                    reply = localFallbackReply(text);
+                }
 
                 typingBubble.remove();
                 chatMessages.push({ role: 'assistant', content: reply });
                 addChatMessage('assistant', reply);
             } catch (err) {
-                console.warn('Using local chat fallback:', err);
+                // Never repeat the generic report summary for every question.
+                // Use the actual extracted report fields when the AI endpoint is unavailable.
+                console.warn('Chat AI unavailable; using report-aware fallback:', err);
                 typingBubble.remove();
                 const reply = localFallbackReply(text);
                 chatMessages.push({ role: 'assistant', content: reply });
